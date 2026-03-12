@@ -1,96 +1,155 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export default function Home() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const ballRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [permissionGranted, setPermissionGranted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // 공의 상태 (위치, 속도)
+  const pos = useRef({ x: 0, y: 0, vx: 0, vy: 0 });
+  const tilt = useRef({ beta: 0, gamma: 0 });
+
+  // 센서 권한 요청 (iOS 13+ 대응)
+  const requestPermission = async () => {
+    if (
+      typeof window !== "undefined" &&
+      typeof (DeviceOrientationEvent as any).requestPermission === "function"
+    ) {
+      try {
+        const response = await (DeviceOrientationEvent as any).requestPermission();
+        if (response === "granted") {
+          setPermissionGranted(true);
+        } else {
+          setError("기울기 센서 권한이 거부되었습니다.");
+        }
+      } catch (err) {
+        setError("권한 요청 중 오류가 발생했습니다.");
+      }
+    } else {
+      // Android나 구형 브라우저
+      setPermissionGranted(true);
+    }
+  };
+
+  useEffect(() => {
+    if (!permissionGranted) return;
+
+    // 기기 기울기 감지 이벤트 리스너
+    const handleOrientation = (e: DeviceOrientationEvent) => {
+      // beta: 앞뒤 기울기 (-180 ~ 180)
+      // gamma: 좌우 기울기 (-90 ~ 90)
+      tilt.current.beta = e.beta || 0;
+      tilt.current.gamma = e.gamma || 0;
+    };
+
+    window.addEventListener("deviceorientation", handleOrientation);
+
+    // 초기 위치 설정 (중앙)
+    if (containerRef.current) {
+      pos.current.x = window.innerWidth / 2;
+      pos.current.y = window.innerHeight / 2;
+    }
+
+    // 애니메이션 루프
+    let animationId: number;
+    const update = () => {
+      if (!ballRef.current || !containerRef.current) return;
+
+      const friction = 0.98; // 마찰력
+      const sensitivity = 0.15; // 민감도
+      const ballSize = 50; // 공 크기
+
+      // 기울기에 따른 가속도 적용
+      pos.current.vx += tilt.current.gamma * sensitivity;
+      pos.current.vy += tilt.current.beta * sensitivity;
+
+      // 마찰력 적용
+      pos.current.vx *= friction;
+      pos.current.vy *= friction;
+
+      // 위치 업데이트
+      pos.current.x += pos.current.vx;
+      pos.current.y += pos.current.vy;
+
+      // 벽 충돌 처리 (바운스)
+      const maxX = window.innerWidth - ballSize;
+      const maxY = window.innerHeight - ballSize;
+
+      if (pos.current.x < 0) {
+        pos.current.x = 0;
+        pos.current.vx *= -0.5;
+      } else if (pos.current.x > maxX) {
+        pos.current.x = maxX;
+        pos.current.vx *= -0.5;
+      }
+
+      if (pos.current.y < 0) {
+        pos.current.y = 0;
+        pos.current.vy *= -0.5;
+      } else if (pos.current.y > maxY) {
+        pos.current.y = maxY;
+        pos.current.vy *= -0.5;
+      }
+
+      // DOM 업데이트 (성능을 위해 Ref 직접 조작)
+      ballRef.current.style.transform = `translate3d(${pos.current.x}px, ${pos.current.y}px, 0)`;
+
+      animationId = requestAnimationFrame(update);
+    };
+
+    animationId = requestAnimationFrame(update);
+
+    return () => {
+      window.removeEventListener("deviceorientation", handleOrientation);
+      cancelAnimationFrame(animationId);
+    };
+  }, [permissionGranted]);
 
   return (
-    <div className="relative min-h-screen w-full overflow-hidden bg-white font-sans text-black">
-      {/* Background Image with Hover Effect */}
-      <div 
-        className="absolute inset-0 z-0 bg-cover bg-center transition-opacity duration-1000 ease-in-out hover:opacity-0"
-        style={{ 
-          backgroundImage: `url('https://images.unsplash.com/photo-1472289065668-ce650ac443d2?q=80&w=2070&auto=format&fit=crop')` 
-        }}
-      />
-
-      {/* Navigation Bar */}
-      <nav className="relative z-20 flex w-full items-center justify-between p-6">
-        {/* Left: Nav Buttons */}
-        <div className="flex gap-4">
-          {["메인", "소개", "직원"].map((item) => (
-            <button 
-              key={item}
-              className="text-sm font-medium text-white mix-blend-difference hover:opacity-70 transition-opacity"
-            >
-              {item}
-            </button>
-          ))}
-        </div>
-
-        {/* Right: Hamburger Menu */}
-        <button 
-          onClick={() => setIsMenuOpen(true)}
-          className="flex flex-col gap-1.5 p-2 mix-blend-difference"
-          aria-label="Open Menu"
-        >
-          <span className="h-0.5 w-6 bg-white"></span>
-          <span className="h-0.5 w-6 bg-white"></span>
-          <span className="h-0.5 w-6 bg-white"></span>
-        </button>
-      </nav>
-
-      {/* Main Content (Optional placeholder for visibility) */}
-      <main className="relative z-10 flex min-h-[calc(100vh-160px)] flex-col items-center justify-center">
-        <h1 className="text-4xl font-bold text-white mix-blend-difference opacity-20 mb-8">
-          WELCOME
-        </h1>
-        <a 
-          href="/skyline.html" 
-          target="_blank"
-          className="group relative px-8 py-4 font-bold text-white mix-blend-difference border-2 border-white hover:bg-white hover:text-black transition-all duration-300 rounded-full flex items-center gap-3 pointer-events-auto shadow-[0_0_15px_rgba(255,255,255,0.3)] hover:shadow-[0_0_30px_rgba(255,255,255,0.6)]"
-        >
-          <span className="text-xl">🚀</span>
-          <span>START SKYLINE RUNNER</span>
-          <span className="opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300">→</span>
-        </a>
-      </main>
-
-      {/* Side Menu Panel */}
-      <div 
-        className={`fixed top-0 right-0 z-50 h-full w-full bg-white shadow-2xl transition-transform duration-500 ease-in-out sm:w-1/2 ${
-          isMenuOpen ? "translate-x-0" : "translate-x-full"
-        }`}
-      >
-        <div className="relative flex h-full flex-col items-center justify-center p-12">
-          {/* Close Button */}
-          <button 
-            onClick={() => setIsMenuOpen(false)}
-            className="absolute top-8 right-8 p-2 text-3xl font-light hover:rotate-90 transition-transform duration-300"
-            aria-label="Close Menu"
+    <div 
+      ref={containerRef}
+      className="relative h-screen w-full overflow-hidden bg-slate-900 flex items-center justify-center"
+    >
+      {!permissionGranted ? (
+        <div className="z-10 text-center px-6">
+          <h1 className="text-3xl font-bold text-white mb-6">Rolling Ball</h1>
+          <p className="text-slate-400 mb-8">기기를 기울여 공을 움직여보세요!</p>
+          <button
+            onClick={requestPermission}
+            className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-8 rounded-full shadow-lg transition-all active:scale-95"
           >
-            ✕
+            센서 활성화 및 시작
           </button>
-          
-          <h2 className="text-4xl font-bold tracking-tight text-black">안녕하세요</h2>
+          {error && <p className="mt-4 text-red-400 text-sm">{error}</p>}
         </div>
-      </div>
-
-      {/* Footer */}
-      <footer className="absolute bottom-6 w-full text-center z-20">
-        <p className="text-[10px] font-bold tracking-widest text-white mix-blend-difference opacity-60 uppercase">
-          MADE BY JIMINKYU
-        </p>
-      </footer>
-
-      {/* Overlay to close menu when clicking outside (on small screens it covers all, on large it's the other half) */}
-      {isMenuOpen && (
+      ) : (
         <div 
-          className="fixed inset-0 z-40 bg-black/10 backdrop-blur-sm sm:w-1/2"
-          onClick={() => setIsMenuOpen(false)}
-        />
+          className="absolute top-0 left-0 w-full h-full pointer-events-none"
+        >
+          {/* 공 (Ball) */}
+          <div
+            ref={ballRef}
+            className="absolute w-[50px] h-[50px] bg-gradient-to-br from-orange-400 to-red-600 rounded-full shadow-[0_10px_20px_rgba(0,0,0,0.5),inset_-5px_-5px_10px_rgba(0,0,0,0.3)] flex items-center justify-center transition-none"
+            style={{ willChange: "transform" }}
+          >
+             {/* 공 위의 하이라이트 효과 */}
+             <div className="absolute top-2 left-3 w-3 h-3 bg-white/40 rounded-full blur-[1px]"></div>
+          </div>
+
+          {/* 안내 텍스트 (배경) */}
+          <div className="absolute inset-0 flex items-center justify-center opacity-10 pointer-events-none select-none">
+            <span className="text-white text-9xl font-black italic">TILT ME</span>
+          </div>
+        </div>
       )}
+
+      {/* 바닥 질감 느낌의 격자 무늬 (배경) */}
+      <div className="absolute inset-0 z-[-1] opacity-20" 
+           style={{ backgroundImage: 'radial-gradient(#ffffff 1px, transparent 1px)', backgroundSize: '40px 40px' }}>
+      </div>
     </div>
   );
 }
