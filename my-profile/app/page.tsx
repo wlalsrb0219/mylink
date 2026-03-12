@@ -132,11 +132,11 @@ export default function Home() {
           {/* 공 (Ball) */}
           <div
             ref={ballRef}
-            className="absolute w-[50px] h-[50px] bg-gradient-to-br from-orange-400 to-red-600 rounded-full shadow-[0_10px_20px_rgba(0,0,0,0.5),inset_-5px_-5px_10px_rgba(0,0,0,0.3)] flex items-center justify-center transition-none"
+            className="absolute w-[50px] h-[50px] bg-gradient-to-br from-cyan-400 to-blue-600 rounded-full shadow-[0_10px_30px_rgba(0,0,0,0.5),inset_-5px_-5px_15px_rgba(0,0,0,0.4)] flex items-center justify-center transition-none"
             style={{ willChange: "transform" }}
           >
              {/* 공 위의 하이라이트 효과 */}
-             <div className="absolute top-2 left-3 w-3 h-3 bg-white/40 rounded-full blur-[1px]"></div>
+             <div className="absolute top-2 left-3 w-4 h-4 bg-white/50 rounded-full blur-[2px]"></div>
           </div>
 
           {/* 안내 텍스트 (배경) */}
