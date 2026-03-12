@@ -1,0 +1,10 @@
+{
+  "name": "my-link-root",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "cd my-profile && npm run dev",
+    "build": "cd my-profile && npm run build",
+    "start": "cd my-profile && npm run start",
+    "lint": "cd my-profile && npm run lint"
+  }
+}
