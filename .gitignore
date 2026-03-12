@@ -1,0 +1,39 @@
+# dependencies
+my-profile/node_modules
+my-profile/.pnp
+my-profile/.pnp.*
+my-profile/.yarn/*
+!my-profile/.yarn/patches
+!my-profile/.yarn/plugins
+!my-profile/.yarn/releases
+!my-profile/.yarn/versions
+
+# next.js
+my-profile/.next/
+my-profile/out/
+
+# testing
+my-profile/coverage
+
+# production
+my-profile/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files
+.env*
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+my-profile/next-env.d.ts
