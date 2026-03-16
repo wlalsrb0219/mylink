@@ -9,8 +9,8 @@ const notoSaans = Noto_Sans_KR({
 });
 
 export const metadata: Metadata = {
-  title: "프로필 | 디자인 및 개발 솔루션",
-  description: "사용자의 일상을 바꾸는 기술적인 솔루션을 제공하는 프로필 사이트",
+  title: "BLUE STOCK | 모의 주식 거래 플랫폼",
+  description: "실시간 주가 시뮬레이션 및 모의 투자 서비스",
 };
 
 export default function RootLayout({
